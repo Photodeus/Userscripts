@@ -254,6 +254,8 @@ function trStartup (){
         div.blueBorder2 { border: 10px solid blue; } \
         div.yellowBorder { outline: 2px solid yellow; outline-offset:0px; }\
         div.yellowBorder2 { outline: 10px solid yellow; outline-offset:0px; }\
+        div.salvageBorder { outline: 3px solid #F24; outline-offset:2px; }\
+        div.hasEffect { outline: 3px solid white; outline-offset:1px; }\
         #trhammer { background-image: url("https://kabam1-a.akamaihd.net/kingdomsofcamelot/fb/e2/src/img/throne/modal/sm_hammer.png"); background-repeat: no-repeat; background-color: transparent; display: inline-block; width: 28px; height: 32px; margin: 2px; vertical-align: middle;}\
         div.trhammer { background-image: url("https://kabam1-a.akamaihd.net/kingdomsofcamelot/fb/e2/src/img/throne/modal/sm_hammer.png"); background-repeat: no-repeat; background-color: transparent; display: inline-block; width: 28px; height: 32px; margin: 2px; vertical-align: middle;}\
         div.trbroken { background-image: url("https://kabam1-a.akamaihd.net/kingdomsofcamelot/fb/e2/src/img/throne/modal/sm_fail_overlay.png"); background-repeat: no-repeat; background-color: transparent; display: inline-block; width: 28px; height: 32px; margin: 2px; vertical-align: middle;}\
@@ -273,6 +275,14 @@ function trStartup (){
         #trQueue th { text-align: center; }\
         div.tt {margin-left: -999em; position: absolute;}\
         div.indent25 {padding-left:25px}\
+        li.sortvalue {font-size: 125%; color: blue;}\
+        li.sortvalue b{font-size: 125%; color: red; font-weight: normal;}\
+        #salvageHelpLabel { padding-left: 2em; }\
+        .slotmarkers {display:inline-block; float: right; margin-right: 8px; overflow: auto; height: 11px;}\
+        .slotmarkers > div { display:inline-block; width: 9px; height: 9px; font-size: 8px; margin-right: 3px; border-radius: 3px; -moz-border-radius: 3px; }\
+        .slotmarkers > div.slot-on  { color: cyan; background-color: cyan; border: 1px solid blue; }\
+        .slotmarkers > div.slot-off { color: #AAA; background-color: #AAA; border: 1px solid #777; }\
+        .slotmarkers.negated > div.slot-on { color: magenta; background-color: pink; border: 1px solid magenta; }\
         a.loadPreset:hover div.tt { border-radius: 5px 5px; -moz-border-radius: 5px; -webkit-border-radius: 5px;\
              box-shadow: 5px 5px 5px rgba(0, 0, 0, 0.1); -webkit-box-shadow: 5px 5px rgba(0, 0, 0, 0.1); -moz-box-shadow: 5px 5px rgba(0, 0, 0, 0.1);\
              font-family: Calibri, Tahoma, Geneva, sans-serif; font-weight: normal;\
@@ -1478,39 +1488,43 @@ Tabs.throneSalvage = {
                 m += '<tr>';
                 m += "<td width=90%><div class='trRule'>";
 
-                m += " Type: " + rule.type;
-                m += " Faction: " + rule.faction;
+                if (rule.type != "any" || rule.faction != "any") {
+                	m += "Type: <code><b>" + rule.type + "</b></code>";
+                	m += " Faction: <code><b>" + rule.faction + "</b></code>";
+                	m += "<br>";
+                }
 
                 for (ii = 0; ii < rule.conditions.length; ii++)
                 {
                     var condition = rule.conditions[ii];
 
-                    if (ii ==0 )
-                        m += "<br> Item";
-                    else
-                        m += "<br> <u>and</u>";
+                    if (ii > 0)
+                        m += "<br>and";
 
                     if (condition.mustHave != "false")
-                        m += " must have ";
+                        m += " ";
                     else
-                        m += " must NOT have ";
+                        m += " NOT ";
 
-                    m += condition.number + "x ";
-                    m += condition.effect + " ";
+                    if (condition.number > 1) m += condition.number + "x ";
+                    m += "<code><b>"+ condition.effect + "</b></code> ";
 
                     if (condition.buffType == "b")
-                        m += "buff ";
+                        m += "<span style=\"color:green\">buff</span> ";
                     else if (condition.buffType == "d")
-                        m += "debuff ";
+                        m += "<span style=\"color:red\">debuff</span> ";
                     else
-                        m += "buff or debuff ";
+                        m += "<span style=\"color:#666\">buff or debuff</span> ";
 
-                    m += " in slot(s): ";
+                    m += " in slot"+(condition.slots.length>1?"s: ":": ");
 
+                    var nn = '<div class="slotmarkers'+(condition.mustHave != 'false' ? '':' negated')+'">';
                     for (j = 0; j < condition.slots.length; j++)
                     {
-                        if (condition.slots[j] ) m += (j+1) + " ";
+                        nn += '<div class="'+(condition.slots[j]?"slot-on":"slot-off")+'">'+(j+1)+'</div>';
                     }
+                    nn += '</div>';
+                    m += nn;
 
                 }
                 m += "</div></td>";
@@ -1544,11 +1558,13 @@ Tabs.throneSalvage = {
                 clearInterval(t.sTimer);
                 t.delItems = [];
             } else {
-                salvageData.salvageActive = true;
-                var btn = document.getElementById('trSalvagerPower');
-                btn.value = "Salvager = ON";
-                t.doSalvage();
-                t.start();
+            	if (confirm('Are you sure you want to enable automatic salvage?')) {
+					salvageData.salvageActive = true;
+					var btn = document.getElementById('trSalvagerPower');
+					btn.value = "Salvager = ON";
+					t.doSalvage();
+					t.start();
+				}
             }
             t.updateTRTab();
 
@@ -1984,7 +2000,7 @@ Tabs.organizer = {
             }
 
             m += '</select></span></div></td>';
-            m += '<TD width=20%><INPUT id=testSalvage type=button value=" Test Salvage "/></td><td id=trDelResults></td>';
+            m += '<TD width=20%><INPUT id=testSalvage type=button value=" Salvage simulator "/></td><td id=trDelResults></td>';
             m += '</tr>';
             
             
@@ -2294,8 +2310,11 @@ Tabs.organizer = {
             var s = Tabs.throneSalvage;
             var toDelete = s.buildList(true);
 
-            $('#trDelResults').html("<div> " + toDelete.length + " item(s) targeted for deletion</div>");
+            var i, cnt=0;
+            for (i in unsafeWindow.kocThroneItems) { cnt++; }
+            $('#trDelResults').html(toDelete.length + " of " + cnt + " would be deleted");
 
+            $("ul#throneInventoryList > li > div").removeClass('salvageBorder');
             for (i =0; i < toDelete.length; i++)
             {
                 var item = unsafeWindow.kocThroneItems[toDelete[i]];
@@ -2306,6 +2325,7 @@ Tabs.organizer = {
                 else
                 {
                     t.selectCard(toDelete[i], "red");
+                    $("div#throneInventoryItem" + toDelete[i]).addClass('salvageBorder');
                 }
             }
         },
@@ -2318,6 +2338,7 @@ Tabs.organizer = {
             var tab = document.getElementById('trDisplayTable');
             var ii = Math.max(t.itemLists['chair'].length, t.itemLists['table'].length, t.itemLists['window'].length, t.itemLists['banner'].length, t.itemLists['advisor'].length, t.itemLists['trophy'].length);
 
+            $("ul#throneInventoryList > li > div").removeClass('hasEffect');
             m += "<tr align=center valign=top><th width=17%>Chairs</th><th width=17%>Tables</th><th width=17%>Windows</th><th width=17%>Banners</th><th width=16%>Advisors</th><th width=16%>Throphies</th></tr>";
             for (var k= 0; k < ii ; k++)
             {
@@ -2468,7 +2489,9 @@ Tabs.organizer = {
             for (i in t.itemLists)
             {
                 t.itemLists[i].sort( function (item1, item2) {
-                    return t.sortValue(item2) - t.sortValue(item1);
+                	item1.sortval = t.sortValue(item1);
+                	item2.sortval = t.sortValue(item2);
+                    return item2.sortval - item1.sortval;
                 });
             }
         },
