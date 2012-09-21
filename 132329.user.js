@@ -1403,6 +1403,7 @@ Tabs.throneSalvage = {
                 var effectName = CM.thronestats.effects[e][1].split(" Debuff")[0];
                 if (effects.indexOf(effectName) < 0) effects.push(effectName);
             }
+            effects.sort();
 
             var select = document.getElementById(rowId + "sel3");
             for(index in effects) {
@@ -1965,6 +1966,7 @@ Tabs.organizer = {
                 var effectName = CM.thronestats.effects[e][1].split(" Debuff")[0];
                 if (effects.indexOf(effectName) < 0) effects.push(effectName);
             }
+            effects.sort();
 
             // header stuff
 
